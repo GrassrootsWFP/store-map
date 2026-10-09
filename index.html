@@ -38,6 +38,7 @@
   .store .where { color: var(--soft); font-size: 12px; }
   .store .has { font-size: 12px; margin-top: 4px; }
   .store a { color: var(--ink); font-size: 12px; font-weight: 600; }
+  .links { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 2px; }
   .km { float: right; font-size: 12px; color: var(--soft); font-weight: 500; }
   .empty { padding: 16px; color: var(--soft); }
   .leaflet-popup-content { font: 13px/1.45 Montserrat, system-ui, sans-serif; margin: 12px 14px; }
@@ -103,9 +104,10 @@
   }
   function names(keys) { return data.products.filter(function (p) { return keys.indexOf(p.key) >= 0; }).map(function (p) { return p.name; }).join(' · '); }
   function directions(s) { return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(s.name + ', ' + s.address); }
+  function call(s) { return s.phone ? '<a href="tel:' + s.phone.replace(/[^\d+]/g, '') + '">Call ' + esc(s.phone) + '</a>' : ''; }
   function popup(s) {
     return '<h3>' + esc(s.name) + '</h3><div>' + esc(s.address) + '</div><div style="margin:6px 0">' + esc(names(s.products)) + '</div>' +
-      '<a href="' + directions(s) + '" target="_blank" rel="noopener">Directions ↗</a>';
+      '<div class="links">' + call(s) + '<a href="' + directions(s) + '" target="_blank" rel="noopener">Directions ↗</a></div>';
   }
 
   function shown() {
@@ -136,7 +138,7 @@
     $('list').innerHTML = list.length ? list.map(function (s, i) {
       return '<div class="store" tabindex="0" role="button" data-i="' + i + '">' + (s.km != null ? '<span class="km">' + (s.km < 10 ? s.km.toFixed(1) : Math.round(s.km)) + ' km</span>' : '') +
         '<h3>' + esc(s.name) + '</h3><div class="where">' + esc(s.address) + '</div><div class="has">' + esc(names(s.products)) + '</div>' +
-        '<a href="' + directions(s) + '" target="_blank" rel="noopener">Directions ↗</a></div>';
+        '<div class="links">' + call(s) + '<a href="' + directions(s) + '" target="_blank" rel="noopener">Directions ↗</a></div></div>';
     }).join('') : '<div class="empty">No stores match. Try a different town, or fewer products.</div>';
     if (fit && list.length) {
       var pts = (origin ? list.slice(0, 5) : list).map(function (s) { return [s.lat, s.lng]; });
