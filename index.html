@@ -28,7 +28,10 @@
   .status { font-size: 12px; color: var(--soft); min-height: 1.2em; }
   .main { flex: 1; display: flex; min-height: 0; }
   #list { width: 340px; overflow-y: auto; border-right: 1px solid var(--line); background: #fff; }
-  #map { flex: 1; min-height: 300px; background: #eee; }
+  #map { flex: 1; min-height: 300px; background: #eee; position: relative; }
+  .hint { position: absolute; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; text-align: center;
+    background: rgba(0,0,0,.45); color: #fff; font-weight: 600; font-size: 15px; pointer-events: none; opacity: 0; transition: opacity .2s; }
+  .hint.on { opacity: 1; }
   .store { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
   .store:hover, .store.on { background: var(--hi); }
   .store h3 { margin: 0; font-size: 14px; font-weight: 600; }
@@ -74,7 +77,20 @@
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var norm = function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, "'"); };
-  var map = L.map('map', { scrollWheelZoom: false }).setView([43.7, -81.1], 8);
+  // Phones and tablets: two fingers pinch to zoom and move the map; one finger scrolls the page (with a hint)
+  var touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  var map = L.map('map', { scrollWheelZoom: false, dragging: !touch, touchZoom: true, tap: false }).setView([43.7, -81.1], 8);
+  if (touch) {
+    var hint = document.createElement('div'); hint.className = 'hint'; hint.textContent = 'Use two fingers to move the map';
+    map.getContainer().appendChild(hint);
+    var hintTimer = null, oneFinger = false;
+    var el = map.getContainer();
+    el.addEventListener('touchstart', function (e) { oneFinger = e.touches.length === 1; if (!oneFinger) hint.classList.remove('on'); }, { passive: true });
+    el.addEventListener('touchmove', function (e) {
+      if (!oneFinger || e.touches.length !== 1) { hint.classList.remove('on'); return; }
+      hint.classList.add('on'); clearTimeout(hintTimer); hintTimer = setTimeout(function () { hint.classList.remove('on'); }, 1200);
+    }, { passive: true });
+  }
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
   window.addEventListener('resize', function () { map.invalidateSize(); });
   map.on('focus', function () { map.scrollWheelZoom.enable(); });
